@@ -1,5 +1,6 @@
-import unittest
+import unittest, json
 #Don't forget to add parent directory to $path
+#export PYTHONPATH=${PYTHONPATH}:~/Desktop/python/strainer
 from strainer import Validator
 from pprint import pprint
 
@@ -43,26 +44,66 @@ rules = {
 	}
 '''
 
+def is_odd(num):
+	return (num % 2 != 0)
+
 rules = {
-	"name" : {
-		"type" : "string",
-		"required" : True
-	},
 	"age" : {
 		"type" : "numeric",
-		"between" : [0, 100]
+		"required" : True,
+		"validator" : {"function" : is_odd, "message" : "must be odd number"}
 	},
-	"numery" : {
-		"type" : "list",
-		"list_type" : ["string", "numeric"]
+	"name" : {
+		"type" : "string",
+		"required" : True,
+		"regex" : "[a-z]+"
+	},
+	"party" : {
+		"type" : "object",
+		"required" : True,
+		"properties" : {
+			"name" : {
+				"type" : "string",
+				"between" : [1, 10]
+			},
+			"sponsors" : {
+				"type" : "list",
+				"required" : True,
+				"min" : 2,
+				"items" : {
+					"name" : {
+						"type" : "string",
+						"required" : True
+					},
+					"ile" : {
+						"type" : "numeric",
+						"between" : [0, 10000],
+						"required" : True
+					}
+				}
+			}	
+		}
 	}
 }
 
 data = {
-	"name" : "Ryszard Petru",
-	"age" : 30,
-	"numery" : [1, 10, {}, "tekst"]
+	"age" : 11,
+	"name" : "A",
+	"party" : {
+		"name" : "Platforma",
+		"sponsors" : [
+			{
+				"name" : "Ryszard Petru",
+				"ile" : 10
+			},
+			{
+				"name" : "Ryszard Kalisz",
+				"ile" : 123
+			}
+		]
+	}
 }
 
 validator = Validator(rules)
-pprint(validator.validate(data))
+#pprint(validator.validate(data))
+print(json.dumps(validator.validate(data), indent=4))

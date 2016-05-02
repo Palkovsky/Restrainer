@@ -1,6 +1,6 @@
-import numbers
+import numbers, re
 from abc import ABCMeta, abstractmethod, abstractproperty
-from .utils import is_email
+from .utils import is_email, data_to_string_type
 
 class Constraint(metaclass=ABCMeta):
 
@@ -11,7 +11,7 @@ class Constraint(metaclass=ABCMeta):
 	def __init__(self):
 		pass
 
-	@abstractproperty
+	@property
 	def name(self):
 		pass
 
@@ -42,7 +42,9 @@ class ExsitanceConstraint(Constraint):
 		return "required"
 
 	def validate(self, value, constraint_value):
-		return value != None
+		if constraint_value == True:
+			return value != None
+		return True
 
 class TypeConstraint(Constraint):
 
@@ -165,3 +167,53 @@ class FormatConstraint(Constraint):
 		return True	
 		
 		
+class ListTypeConstraint(Constraint):
+
+	def __init__(self):
+		super(ListTypeConstraint, self).__init__()
+
+	def name(self):
+		return "list_type"
+
+	def validate(self, value, constraint_value):
+		for item in value:
+			print(data_to_string_type(item))
+			if not data_to_string_type(item) in constraint_value:
+				return {"list_types" : constraint_value}
+		return True
+
+
+#This one lets you pass function as a constraint_value
+class ValidatorConstraint(Constraint):
+
+	def __init__(self):
+		super(ValidatorConstraint, self).__init__()
+		
+	def name(self):
+		return "validator"
+
+	def validate(self, value, constraint_value):
+		success = constraint_value['function'](value)
+		if not success:
+			if "message" in constraint_value:
+				return {"message" : constraint_value["message"]}
+			return False
+		return True
+
+class RegexConstraint(Constraint):
+
+	def __init__(self):
+		super(RegexConstraint, self).__init__()
+
+	def name(self):
+		return "regex"
+
+	def validate(self, value, constraint_value):
+		reg = re.compile(constraint_value)
+		if value != None:
+			success = (reg.match(value) != None)
+			if success:
+				return True
+			else:
+				return {"regex" : constraint_value} 
+		return {"regex" : constraint_value} 

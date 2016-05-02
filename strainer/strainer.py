@@ -4,15 +4,21 @@ from .exceptions import *
 
 class Validator(object):
 
-	def __init__(self, rules):
+	def __init__(self, rules, constrainers = []):
 		self.__errors = []
+		self.__errors_count = 0
 		self.__rules = rules
-		self.__constrainers = self.__default_constrains()
+		if len(constrainers) == 0:
+			self.__constrainers = self.__default_constrains()
+		else:
+			self.__constrainers = constrainers
+		self.__build_method = self.__build_error
 
 	def __default_constrains(self):
 		return [ExsitanceConstraint(), TypeConstraint(), ValueConstraint(),
 		 		MinConstraint(), MaxConstraint(), BetweenConstraint(),
-		 		SizeConstraint(), FormatConstraint()]
+		 		SizeConstraint(), FormatConstraint(), ListTypeConstraint(),
+		 		ValidatorConstraint(), RegexConstraint()]
 
 	def __find_constrainer(self, name):
 		for constrainer in self.__constrainers:
@@ -20,39 +26,81 @@ class Validator(object):
 				return constrainer
 		return None
 
+	def set_build_method(self, method):
+		self.__build_method = method
+
 	def load_constraint(self, constraint):
 		if isinstance(constraint, Constraint):
 			self.__constrainers.append(constraint)
 
 	def fails(self):
-		return (len(self.errors) > 0)
+		return self.__errors_count > 0
 
 	def errors(self):
 		return self.__errors
 
 	def validate(self, doc = {}):
+		self.__errors_count = 0
 		self.__errors = []
+		self.__errors += self.__validate_rules(doc)
+		return self.__errors
 
-		for field_name, constraints in self.__rules.items():
+	def __validate_rules(self, doc, rules = None, index = None):
+
+		errors = []
+		if rules == None:
+			rules = self.__rules
+
+		for field_name, constraints in rules.items():
 
 			data_value = doc.get(field_name, None)
+			#print(field_name + " : " + str(data_value))
 
 			for constraint, constraint_value in constraints.items():
-				constrainer = self.__find_constrainer(constraint)
 
-				if constrainer == None:
-					raise ConstraintException("No constrainer found for attribute: '" + constraint + "'.")
+				print(constraint + "  ==  " + str(constraint_value))
 
-				validation_result = constrainer.validate(data_value, constraint_value)
-				succeeded = bool(validation_result) and not isinstance(validation_result, dict)
+				if constraint == "items":
 
-				if not succeeded:
-					if isinstance(validation_result, dict):
-						self.__errors.append(self.__build_error(field_name, constraint, **validation_result))
-					else:
-						self.__errors.append(self.__build_error(field_name, constraint))
+					if data_value == None or not isinstance(data_value, list):
+						continue
 
-		return self.__errors
+					errors_collection = {field_name : []}
+					for index, item in enumerate(data_value):
+						errors_collection[field_name] += self.__validate_rules(item, rules = constraint_value, index = index)
+					errors.append(errors_collection)
+
+				elif constraint == "properties":
+
+					if data_value == None or not isinstance(data_value, dict):
+						continue
+
+					target_errors = self.__validate_rules(data_value, rules = constraint_value)
+					errors.append({ field_name :  target_errors })
+				
+				else:
+
+					constrainer = self.__find_constrainer(constraint)
+					if constrainer == None:
+						raise ConstrainException("No constrainer found for attribute: '" + constraint + "'.")
+
+					validation_result = constrainer.validate(data_value, constraint_value)
+					succeeded = bool(validation_result) and not isinstance(validation_result, dict)
+
+					if not succeeded:
+						if isinstance(validation_result, dict):
+							if index != None:
+								errors.append(self.__build_method(field_name, constraint, index = index, **validation_result))
+							else:
+								errors.append(self.__build_method(field_name, constraint, **validation_result))
+						else:
+							if index != None:
+								errors.append(self.__build_method(field_name, constraint, index = index))
+							else:
+								errors.append(self.__build_method(field_name, constraint))
+						self.__errors_count += 1
+
+		return errors
 
 	def __build_error(self, field_name, constraint, **kwargs):
 		error = {"field" : field_name, "constraint" : constraint}
@@ -61,6 +109,8 @@ class Validator(object):
 		return error
 
 '''
+PERSONAL THOUGHTS DON'T READ
+
 	Example rules set:
 		//Will go with this one
 		{
@@ -86,4 +136,55 @@ class Validator(object):
 
 	Example evaluated object:
 	{"field_1" : "abcdefghijklmnouprstwvxz"}
+
+	{
+		"age" : {
+			"type" : "numeric",
+			"required" : True
+		}, 
+		"participants" : {
+			"type" : "list",
+			"items" : {
+				"name" : {
+					"type" : "string",
+					"required" : True
+				},
+				"parties" : {
+					"type" : "list",
+					"items" : {
+						"name" : {
+							"required" : True,
+							"type" : "string"
+						},
+						"support" : {
+							"type" : "numeric"
+						}
+					}
+				}
+			}
+		}
+	}
+
+	[
+		{
+			"field" : "participants",
+			"items" : [
+				{
+					"index" : 2
+					"field" : "name",
+					"constraint" : "type",
+					"type" : "string"
+				}
+			]
+		}
+	]
+
+	Types:
+		-numeric
+		-string
+		-object
+		-boolean
+		-object
+		-list(for primitves)
+		-object_list(for objects)
 '''
