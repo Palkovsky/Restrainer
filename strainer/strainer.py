@@ -1,6 +1,6 @@
 import numbers
 from .constraints.constraints import *
-from .exceptions import *
+from .constraints.exceptions import *
 
 class Validator(object):
 
@@ -18,7 +18,7 @@ class Validator(object):
 		return [ExsitanceConstraint(), TypeConstraint(), ValueConstraint(),
 		 		MinConstraint(), MaxConstraint(), BetweenConstraint(),
 		 		SizeConstraint(), FormatConstraint(), ListTypeConstraint(),
-		 		ValidatorConstraint(), RegexConstraint()]
+		 		ValidatorConstraint(), RegexConstraint(), CoerceConstraint()]
 
 	def __find_constrainer(self, name):
 		for constrainer in self.__constrainers:
@@ -39,26 +39,24 @@ class Validator(object):
 	def errors(self):
 		return self.__errors
 
-	def validate(self, doc = {}):
+	def validate(self, doc = {}, rules = None):
+		if rules == None:
+			rules = self.__rules
 		self.__errors_count = 0
 		self.__errors = []
-		self.__errors += self.__validate_rules(doc)
+		self.__errors += self.__validate_rules(doc, rules = rules)
 		return self.__errors
 
 	def __validate_rules(self, doc, rules = None, index = None):
 
 		errors = []
-		if rules == None:
-			rules = self.__rules
+
 
 		for field_name, constraints in rules.items():
 
 			data_value = doc.get(field_name, None)
-			#print(field_name + " : " + str(data_value))
 
 			for constraint, constraint_value in constraints.items():
-
-				print(constraint + "  ==  " + str(constraint_value))
 
 				if constraint == "items":
 
@@ -84,21 +82,22 @@ class Validator(object):
 					if constrainer == None:
 						raise ConstrainException("No constrainer found for attribute: '" + constraint + "'.")
 
-					validation_result = constrainer.validate(data_value, constraint_value)
-					succeeded = bool(validation_result) and not isinstance(validation_result, dict)
+					if (constrainer.accept_null or (data_value != None and not constrainer.accept_null)):
+						validation_result = constrainer.validate(data_value, constraint_value, field_name, doc)
+						succeeded = bool(validation_result) and not isinstance(validation_result, dict)
 
-					if not succeeded:
-						if isinstance(validation_result, dict):
-							if index != None:
-								errors.append(self.__build_method(field_name, constraint, index = index, **validation_result))
+						if not succeeded:
+							if isinstance(validation_result, dict):
+								if index != None:
+									errors.append(self.__build_method(field_name, constraint, index = index, **validation_result))
+								else:
+									errors.append(self.__build_method(field_name, constraint, **validation_result))
 							else:
-								errors.append(self.__build_method(field_name, constraint, **validation_result))
-						else:
-							if index != None:
-								errors.append(self.__build_method(field_name, constraint, index = index))
-							else:
-								errors.append(self.__build_method(field_name, constraint))
-						self.__errors_count += 1
+								if index != None:
+									errors.append(self.__build_method(field_name, constraint, index = index))
+								else:
+									errors.append(self.__build_method(field_name, constraint))
+							self.__errors_count += 1
 
 		return errors
 

@@ -47,16 +47,22 @@ rules = {
 def is_odd(num):
 	return (num % 2 != 0)
 
+def divide_by_two(value):
+	return value / 2
+
 rules = {
 	"age" : {
 		"type" : "numeric",
-		"required" : True,
-		"validator" : {"function" : is_odd, "message" : "must be odd number"}
+		"required" : True
 	},
 	"name" : {
 		"type" : "string",
 		"required" : True,
 		"regex" : "[a-z]+"
+	},
+	"gender" : {
+		"required" : True,
+		"value" : ["male", "female"]
 	},
 	"party" : {
 		"type" : "object",
@@ -87,8 +93,9 @@ rules = {
 }
 
 data = {
-	"age" : 11,
-	"name" : "A",
+	"age" : "11",
+	"name" : "a",
+	"gender" : "male",
 	"party" : {
 		"name" : "Platforma",
 		"sponsors" : [
@@ -105,5 +112,10 @@ data = {
 }
 
 validator = Validator(rules)
-#pprint(validator.validate(data))
-print(json.dumps(validator.validate(data), indent=4))
+validator.validate(data)
+print(json.dumps(data, indent=4))
+if validator.fails():
+	print("Validation FAILED")
+else:
+	print("Validation SUCCESS")
+print(json.dumps(validator.errors(), indent=4))

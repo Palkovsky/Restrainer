@@ -1,50 +1,47 @@
 import numbers, re
 from abc import ABCMeta, abstractmethod, abstractproperty
 from .utils import is_email, data_to_string_type
+from .exceptions import *
 
 class Constraint(metaclass=ABCMeta):
 
-	'''
-		Name is how your constraint will be called in rules tree.
-		So for min constraint it may be 'min' or 'minimum'
-	'''
 	def __init__(self):
 		pass
 
+
+	'''
+		property identifying constraint in scheme definition
+		Ex.
+
+		"name" : {
+			"type" : "string" - 'type' is name here
+		}
+	'''
 	@property
 	def name(self):
 		pass
 
 	'''
-		If you don't wanna pass additional key,values you can return basically everything.
-		But it's important that if validation is failed expressions logical value shuld be False, if succeded - True
+		For most cases this should stay False. It may True when it don't matter if user data is null.
+		Ex. required constraint should allow this
+	'''
+	@property
+	def accept_null(self):
+	    return False
 
-		If you wanna pass additional arguments when it failed, it should look like that:
-		{
-			"validation" : False,
-			**kwargs - for additional args
-		}
+	'''
+		This method decides if validation is successful or not.
 
-		value - value of doc field
-		constraint_value - value declared in constraints definition
+		value - passed field value
+		constraint_value - value of key in scheme(key is name property)
+
+		It shall return True or False depending on validation status.
+		Although returning dictionary will result in False, because dictionary key, value pairs
+		will be shown as additional info in error message.
 	'''
 	@abstractmethod
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		pass
-
-
-class ExsitanceConstraint(Constraint):
-
-	def __init__(self):
-		super(Constraint, self).__init__()
-
-	def name(self):
-		return "required"
-
-	def validate(self, value, constraint_value):
-		if constraint_value == True:
-			return value != None
-		return True
 
 class TypeConstraint(Constraint):
 
@@ -54,9 +51,13 @@ class TypeConstraint(Constraint):
 	def name(self):
 		return "type"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		if constraint_value == "numeric" and not isinstance(value, numbers.Number):
 			return {"type" : "numeric"}
+		elif constraint_value == "integer" and not isinstance(value, int):
+			return {"type" : "integer"}
+		elif constraint_value == "float" and not isinstance(value, float):
+			return {"type" : "float"}
 		elif constraint_value == "string" and not isinstance(value, str):
 			return {"type" : "string"}
 		elif constraint_value == "boolean" and not isinstance(value, bool):
@@ -67,6 +68,24 @@ class TypeConstraint(Constraint):
 			return {"type" : "object"}
 		return True
 
+
+class ExsitanceConstraint(Constraint):
+
+	def __init__(self):
+		super(Constraint, self).__init__()
+
+	def name(self):
+		return "required"
+
+	def accept_null(self):
+	    return True
+
+	def validate(self, value, constraint_value, field_name, doc):
+		if constraint_value == True:
+			return value != None
+		return True
+
+
 class ValueConstraint(Constraint):
 
 	def __init__(self):
@@ -75,7 +94,7 @@ class ValueConstraint(Constraint):
 	def name(self):
 		return "value"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		if not value in constraint_value:
 			return {"allowed" : constraint_value}
 		return True
@@ -88,7 +107,7 @@ class MinConstraint(Constraint):
 	def name(self):
 		return "min"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		min = constraint_value
 		if isinstance(value, numbers.Number):
 			if value < min:
@@ -106,7 +125,7 @@ class MaxConstraint(Constraint):
 	def name(self):
 		return "max"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		max = constraint_value
 		if isinstance(value, numbers.Number):
 			if value > max:
@@ -124,7 +143,7 @@ class BetweenConstraint(Constraint):
 	def name(self):
 		return "between"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		min = constraint_value[0]
 		max = constraint_value[1]
 
@@ -144,7 +163,7 @@ class SizeConstraint(Constraint):
 	def name(self):
 		return "size"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		if isinstance(value, numbers.Number) and value != constraint_value:
 			return {"size" : constraint_value}
 		elif isinstance(value, str) and len(value) != constraint_value:
@@ -161,7 +180,7 @@ class FormatConstraint(Constraint):
 	def name(self):
 		return "data_format"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		if constraint_value == "email" and not is_email(value):
 			return {"data_format" : "email"}
 		return True	
@@ -175,7 +194,7 @@ class ListTypeConstraint(Constraint):
 	def name(self):
 		return "list_type"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		for item in value:
 			print(data_to_string_type(item))
 			if not data_to_string_type(item) in constraint_value:
@@ -192,8 +211,8 @@ class ValidatorConstraint(Constraint):
 	def name(self):
 		return "validator"
 
-	def validate(self, value, constraint_value):
-		success = constraint_value['function'](value)
+	def validate(self, value, constraint_value, field_name, doc):
+		success = bool(constraint_value['function'](value))
 		if not success:
 			if "message" in constraint_value:
 				return {"message" : constraint_value["message"]}
@@ -208,7 +227,7 @@ class RegexConstraint(Constraint):
 	def name(self):
 		return "regex"
 
-	def validate(self, value, constraint_value):
+	def validate(self, value, constraint_value, field_name, doc):
 		reg = re.compile(constraint_value)
 		if value != None:
 			success = (reg.match(value) != None)
@@ -217,3 +236,21 @@ class RegexConstraint(Constraint):
 			else:
 				return {"regex" : constraint_value} 
 		return {"regex" : constraint_value} 
+
+
+class CoerceConstraint(Constraint):
+
+	def __init__(self):
+		super(CoerceConstraint, self).__init__()
+
+	def name(self):
+		return "coerce"
+
+	def validate(self, value, constraint_value, field_name, doc):
+		if hasattr(constraint_value, '__call__'):
+			try:
+				doc[field_name] = constraint_value(value)
+				return True		
+			except:
+				return False
+		raise ConstrainException("Coerce must be callable.")
