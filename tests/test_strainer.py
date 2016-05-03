@@ -1,7 +1,8 @@
-import unittest, json
+import unittest, json, datetime
 #Don't forget to add parent directory to $path
 #export PYTHONPATH=${PYTHONPATH}:~/Desktop/python/strainer
 from strainer import Validator
+from strainer import TypeConstraint
 from pprint import pprint
 
 '''
@@ -55,6 +56,10 @@ rules = {
 		"type" : "numeric",
 		"required" : True
 	},
+	"born" : {
+		"required" : True,
+		"type" : "datetime"
+	},
 	"name" : {
 		"type" : "string",
 		"required" : True,
@@ -93,9 +98,10 @@ rules = {
 }
 
 data = {
-	"age" : "11",
+	"age" : 11.3,
 	"name" : "a",
 	"gender" : "male",
+	"born" : datetime.datetime.now(),
 	"party" : {
 		"name" : "Platforma",
 		"sponsors" : [
@@ -112,10 +118,20 @@ data = {
 }
 
 validator = Validator(rules)
+validator.register_type("datetime", datetime.datetime)
 validator.validate(data)
-print(json.dumps(data, indent=4))
+
+try:
+	print(json.dumps(data, indent=4))
+except TypeError:
+	pprint(data)
+	
 if validator.fails():
 	print("Validation FAILED")
 else:
 	print("Validation SUCCESS")
-print(json.dumps(validator.errors(), indent=4))
+
+try:
+	print(json.dumps(validator.errors(), indent=4))
+except TypeError:
+	pprint(validator.errors())
