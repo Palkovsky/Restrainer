@@ -1,8 +1,8 @@
 from distutils.core import setup
 setup(
   name = 'restrainer',
-  packages = ['strainer'], # this must be the same as the name above
-  version = '1.0',
+  packages = ['restrainer', 'restrainer/constraints'], # this must be the same as the name above
+  version = '1.2',
   description = 'Lightweight, flexible validation library.',
   author = 'Dawid Macek',
   author_email = 'dawidmacek42@gmail.com',
