@@ -51,6 +51,7 @@ def is_odd(num):
 def divide_by_two(value):
 	return value / 2
 
+'''
 rules = {
 	"age" : {
 		"type" : "numeric",
@@ -92,28 +93,27 @@ rules = {
 		}
 	}
 }
+'''
+
+rules = {
+        "name" : {
+            "type" : "string",
+            "size" : 10, #Size in case of string means its length
+            "required" : True
+        },
+        "ids" :{
+        	"required" : True,
+        	"type" : "list",
+        	"list_type" : "integer"
+        }
+    }   
 
 data = {
-	"age" : 11.3,
-	"name" : "00:29:15:80:4E:4A",
-	"gender" : "male",
-	"party" : {
-		"name" : "Platforma",
-		"sponsors" : [
-			{
-				"name" : "Ryszard Petru",
-				"ile" : 10
-			},
-			{
-				"name" : "Ryszard Kalisz",
-				"ile" : 123
-			}
-		]
-	}
+    "name" : "Batman",
+    "ids" : [1, "a"]
 }
 
 validator = Validator(rules)
-validator.register_type("datetime", datetime.datetime)
 validator.validate(data)
 
 try:

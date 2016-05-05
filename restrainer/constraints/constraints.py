@@ -48,13 +48,13 @@ class TypeConstraint(Constraint):
 	def __init__(self):
 		super(TypeConstraint, self).__init__()
 		self._types = {
-			"numeric" : numbers.Number,
 			"integer" : int,
 			"float" : float,
 			"string" : str,
 			"boolean" : bool,
 			"list" : list,
-			"object" : dict
+			"object" : dict,
+			"numeric" : numbers.Number
 		}
 	
 
@@ -72,6 +72,24 @@ class TypeConstraint(Constraint):
 			if constraint_value == key and not isinstance(value, type):
 				return {"type" : key}
 		return True
+
+class ListTypeConstraint(TypeConstraint):
+
+	def __init__(self):
+		super(ListTypeConstraint, self).__init__()
+
+	def name(self):
+		return "list_type"
+
+	def validate(self, value, constraint_value, field_name, doc):
+		try:
+			for item in value:
+				for key, type in self._types.items():
+					if constraint_value == key and not isinstance(item, type):
+						return {"list_type" : constraint_value}
+			return True
+		except:
+			return {"list_type" : constraint_value}
 
 class ExsitanceConstraint(Constraint):
 
@@ -201,20 +219,7 @@ class FormatConstraint(Constraint):
 		return {"data_format" : constraint_value}	
 		
 		
-class ListTypeConstraint(Constraint):
 
-	def __init__(self):
-		super(ListTypeConstraint, self).__init__()
-
-	def name(self):
-		return "list_type"
-
-	def validate(self, value, constraint_value, field_name, doc):
-		for item in value:
-			print(data_to_string_type(item))
-			if not data_to_string_type(item) in constraint_value:
-				return {"list_types" : constraint_value}
-		return True
 
 
 #This one lets you pass function as a constraint_value
