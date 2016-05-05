@@ -1,8 +1,8 @@
 import unittest, json, datetime
 #Don't forget to add parent directory to $path
 #export PYTHONPATH=${PYTHONPATH}:~/Desktop/python/strainer
-from strainer import Validator
-from strainer import TypeConstraint
+from restrainer import Validator
+from restrainer import TypeConstraint
 from pprint import pprint
 
 '''
