@@ -56,14 +56,10 @@ rules = {
 		"type" : "numeric",
 		"required" : True
 	},
-	"born" : {
-		"required" : True,
-		"type" : "datetime"
-	},
 	"name" : {
 		"type" : "string",
 		"required" : True,
-		"regex" : "[a-z]+"
+		"data_format" : "mac"
 	},
 	"gender" : {
 		"required" : True,
@@ -99,9 +95,8 @@ rules = {
 
 data = {
 	"age" : 11.3,
-	"name" : "a",
+	"name" : "00:29:15:80:4E:4A",
 	"gender" : "male",
-	"born" : datetime.datetime.now(),
 	"party" : {
 		"name" : "Platforma",
 		"sponsors" : [
@@ -125,7 +120,7 @@ try:
 	print(json.dumps(data, indent=4))
 except TypeError:
 	pprint(data)
-	
+
 if validator.fails():
 	print("Validation FAILED")
 else:

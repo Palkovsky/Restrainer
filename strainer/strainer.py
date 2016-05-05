@@ -1,6 +1,6 @@
 import numbers
-from .constraints.constraints import *
-from .constraints.exceptions import *
+from strainer.constraints.constraints import *
+from strainer.constraints.exceptions import *
 
 class Validator(object):
 
@@ -8,29 +8,46 @@ class Validator(object):
 		self.__errors = []
 		self.__errors_count = 0
 		self.__rules = rules
+		self.__constrainers = []
 		if len(constrainers) == 0:
-			self.__constrainers = self.__default_constrains()
+			for default_constraint in self.__default_constrains():
+				self.load_constraint(default_constraint)
 		else:
-			self.__constrainers = constrainers
+			for constrainer in constrainers:
+				self.load_constraint(constrainer)
+
+		self.__type_constraint = TypeConstraint()
 		self.__build_method = self.__build_error
 
 	def __default_constrains(self):
-		return [ExsitanceConstraint(), TypeConstraint(), ValueConstraint(),
+		return [ExsitanceConstraint(), ValueConstraint(),
 		 		MinConstraint(), MaxConstraint(), BetweenConstraint(),
 		 		SizeConstraint(), FormatConstraint(), ListTypeConstraint(),
 		 		ValidatorConstraint(), RegexConstraint(), CoerceConstraint()]
 
 	def __find_constrainer(self, name):
-		for constrainer in self.__constrainers:
+		for constrainer in self.constraints():
 			if name == constrainer.name():
 				return constrainer
 		return None
 
+	def set_type_constraint(self, type_constraint):
+		self.__type_constraint = type_constraint
+
+	def register_type(self, name, cls):
+		self.__type_constraint.register_type(name, cls)
+
 	def set_build_method(self, method):
 		self.__build_method = method
 
+	def constraints(self):
+		return self.__constrainers + [self.__type_constraint]
+
 	def load_constraint(self, constraint):
 		if isinstance(constraint, Constraint):
+			for constrainer in self.__constrainers:
+				if constraint.name() == constrainer.name():
+					raise ConstrainException("Constrainer with name'" + constraint.name() + "'already registered.")
 			self.__constrainers.append(constraint)
 
 	def fails(self):

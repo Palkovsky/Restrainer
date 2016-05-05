@@ -1,7 +1,7 @@
 import numbers, re
 from abc import ABCMeta, abstractmethod, abstractproperty
-from .utils import is_email, data_to_string_type
-from .exceptions import *
+from strainer.constraints.utils import is_email, data_to_string_type, is_ip, is_mac
+from strainer.constraints.exceptions import *
 
 class Constraint(metaclass=ABCMeta):
 
@@ -47,27 +47,31 @@ class TypeConstraint(Constraint):
 
 	def __init__(self):
 		super(TypeConstraint, self).__init__()
+		self._types = {
+			"numeric" : numbers.Number,
+			"integer" : int,
+			"float" : float,
+			"string" : str,
+			"boolean" : bool,
+			"list" : list,
+			"object" : dict
+		}
+	
+
+	def register_type(self, name, cls):
+		for key, type in self._types.items():
+			if name in self._types:
+				raise ConstrainException("Name '" + key + "' already registered.")
+		self._types[name] = cls
 
 	def name(self):
 		return "type"
 
 	def validate(self, value, constraint_value, field_name, doc):
-		if constraint_value == "numeric" and not isinstance(value, numbers.Number):
-			return {"type" : "numeric"}
-		elif constraint_value == "integer" and not isinstance(value, int):
-			return {"type" : "integer"}
-		elif constraint_value == "float" and not isinstance(value, float):
-			return {"type" : "float"}
-		elif constraint_value == "string" and not isinstance(value, str):
-			return {"type" : "string"}
-		elif constraint_value == "boolean" and not isinstance(value, bool):
-			return {"type" : "boolean"}
-		elif constraint_value == "list" and not isinstance(value, list):
-			return {"type" : "list"}
-		elif constraint_value == "object" and not isinstance(value, dict):
-			return {"type" : "object"}
+		for key, type in self._types.items():
+			if constraint_value == key and not isinstance(value, type):
+				return {"type" : key}
 		return True
-
 
 class ExsitanceConstraint(Constraint):
 
@@ -181,9 +185,20 @@ class FormatConstraint(Constraint):
 		return "data_format"
 
 	def validate(self, value, constraint_value, field_name, doc):
-		if constraint_value == "email" and not is_email(value):
-			return {"data_format" : "email"}
-		return True	
+
+		if isinstance(value, str):
+
+			#FIX ME HER
+			if constraint_value == "email" and not is_email(value):
+				return {"data_format" : constraint_value}
+			elif constraint_value == "ip" and not is_ip(value):
+				return {"data_format" : constraint_value}
+			elif constraint_value == "mac" and not is_mac(value):
+				return {"data_format" : constraint_value}
+
+			return True
+
+		return {"data_format" : constraint_value}	
 		
 		
 class ListTypeConstraint(Constraint):
