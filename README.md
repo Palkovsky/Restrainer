@@ -117,8 +117,8 @@ If you wanna have nested dict and validate it you can use 'properties' attribute
     data = {
         "name" : "Batman",
         "pet" : {
-        	"name" : "Rex",
-        	"age" : 200
+            "name" : "Rex",
+            "age" : 200
         }
     }
     
@@ -248,4 +248,52 @@ Coerce function should take one argument and return some value. Let's say you ac
 
 ## Custom constrainers
 
-Shall be written soon.
+Library lets you easily build your custom constrainers. You just need to create class inheriting from Constraint. It has to have two methods:
+- name(self) - returning string value of how you wanna invoke constraint in rules set;
+- validate(self, value, constraint_value, field, doc) - where you perform your logic and return True or False. **IMPORTANT:** Returning dict will result in validation fail. You should return dict when you want to pass additional info to error output. Like for "between" constraint you have additional "min", "max" fields in error output.
+- accept_null(self) - **optional**. It's False by default. If value in validated document is None, validation method won't be invoked. You would want to switch it to True in presence constraints or something like that.
+
+### Example
+
+    from restrainer import Constraint, Validator
+    
+    #define constrainer
+    class DifferentThanConstraint(Constraint):
+    
+        #key to which you will define value for specific constrain
+        def name(self):
+            return "different"
+            
+        def validate(self, value, constraint_value, field, doc):
+            if value == constraint_value: #if value in document is equal to value in rules set
+                return {"different" : constraint_value}
+            return True 
+       
+    #create validator     
+    rules {
+        "name" : {
+            "type" : "string",
+            "different" : "admin"
+        }
+     }
+    validator = Validator(rules)
+    #load custom constrainer
+    validator.load_constraint(DifferentThanConstraint())
+    
+    data = {
+        "name" : "admin"
+    }
+    
+    #run validator
+    validator.validate(data)
+    print(validator.errors())
+
+Snippet above will print with:
+
+    {
+        "field" : "name",
+        "constraint" : "different",
+        "different" : "admin"
+    }
+
+This implementation of diffrentThan constrainer is preety poor, because it will only check if passed parrameters are the same. But you could rewrite it to accept list as constrainer_value and make sure if there are no same items.
