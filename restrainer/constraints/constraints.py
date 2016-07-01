@@ -188,12 +188,11 @@ class SizeConstraint(Constraint):
 	def validate(self, value, constraint_value, field_name, doc):
 		if isinstance(value, numbers.Number) and value != constraint_value:
 			return {"size" : constraint_value}
-		elif isinstance(value, str) and len(value) != constraint_value:
-			return {"size" : constraint_value}
-		elif isinstance(value, list) and len(value) != constraint_value:
+		elif hasattr(value, '__len__') and len(value) != constraint_value:
 			return {"size" : constraint_value}
 		return True
 
+#this needs some serious work
 class FormatConstraint(Constraint):
 
 	def __init__(self):
@@ -217,12 +216,10 @@ class FormatConstraint(Constraint):
 			return True
 
 		return {"data_format" : constraint_value}	
-		
-		
-
 
 
 #This one lets you pass function as a constraint_value
+#for future - it should accept list of functions if user wants to pass more
 class ValidatorConstraint(Constraint):
 
 	def __init__(self):

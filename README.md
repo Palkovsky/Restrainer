@@ -82,8 +82,8 @@ will result with:
         "email" : "sexsexsex"
     }
     
-    validator = Validator(rules)
-    validator.validate(data) #This also returns errors list
+    validator = Validator()
+    validator.validate(data, rules = rules) #This also returns errors list
     
     if validator.fails():
         print(validator.errors())
@@ -161,29 +161,15 @@ Simiral to nested dict, but this time you should use 'items' keyword.
         }
     }
     
-    data =  [
-        {
-            "pets": [
-                {
-                    "index": 0,
-                    "field": "age",
-                    "constraint": "max",
-                    "max": 100
-                },
-                {
-                    "index": 2,
-                    "field": "name",
-                    "constraint": "required"
-                }
-            ]
-        },
-        {
-            "size": 10,
-            "index": 2,
-            "field": "name",
-            "constraint": "size"
-        }
-    ]
+    data =  {
+        "name" : "Jerry",
+        "pets" : [
+            {"name" : "Dog 1", "age" : 101},
+            {"name" : "Dog 2", "age" : 4},
+            {"name" : "Dog 3", "age 4"},
+            {"age" : 32}
+        ]
+    }
     
 Responds with:
 
@@ -276,7 +262,7 @@ Library lets you easily build your custom constrainers. You just need to create 
             "different" : "admin"
         }
      }
-    validator = Validator(rules)
+    validator = Validator(rules = rules)
     #load custom constrainer
     validator.load_constraint(DifferentThanConstraint())
     
@@ -297,3 +283,8 @@ Snippet above will print with:
     }
 
 This implementation of diffrentThan constrainer is preety poor, because it will only check if passed parrameters are the same. But you could rewrite it to accept list as constrainer_value and make sure if there are no same items.
+
+
+## Running tests
+
+        python -m unittest discover tests

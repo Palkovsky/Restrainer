@@ -4,11 +4,12 @@ from restrainer.constraints.exceptions import *
 
 class Validator(object):
 
-	def __init__(self, rules, constrainers = []):
+	def __init__(self, rules = {}, constrainers = []):
 		self.__errors = []
 		self.__errors_count = 0
 		self.__rules = rules
 		self.__constrainers = []
+
 		if len(constrainers) == 0:
 			for default_constraint in self.__default_constrains():
 				self.load_constraint(default_constraint)
@@ -56,7 +57,7 @@ class Validator(object):
 	def errors(self):
 		return self.__errors
 
-	def validate(self, doc = {}, rules = None):
+	def validate(self, doc, rules = None):
 		if rules == None:
 			rules = self.__rules
 		self.__errors_count = 0
@@ -64,10 +65,9 @@ class Validator(object):
 		self.__errors += self.__validate_rules(doc, rules = rules)
 		return self.__errors
 
-	def __validate_rules(self, doc, rules = None, index = None):
+	def __validate_rules(self, doc, rules = {}, index = None):
 
 		errors = []
-
 
 		for field_name, constraints in rules.items():
 
@@ -123,84 +123,3 @@ class Validator(object):
 		for key, value in kwargs.items():
 			error[key] = value
 		return error
-
-'''
-PERSONAL THOUGHTS DON'T READ
-
-	Example rules set:
-		//Will go with this one
-		{
-			"field_1" : {
-				"type" : "string",
-				"max" : 20,
-				"data_format" : "email",
-				"required" : True
-			},
-			"field_2" : {
-				"type" : "numeric",
-				"between" : [1, 100]
-			}
-		}
-	
-
-	VS
-
-	{
-		"field_1" : ["type:string|max:20|data_format:email|required:True"],
-		"field_2" : ["type:numeric|between:1:100"]
-	}
-
-	Example evaluated object:
-	{"field_1" : "abcdefghijklmnouprstwvxz"}
-
-	{
-		"age" : {
-			"type" : "numeric",
-			"required" : True
-		}, 
-		"participants" : {
-			"type" : "list",
-			"items" : {
-				"name" : {
-					"type" : "string",
-					"required" : True
-				},
-				"parties" : {
-					"type" : "list",
-					"items" : {
-						"name" : {
-							"required" : True,
-							"type" : "string"
-						},
-						"support" : {
-							"type" : "numeric"
-						}
-					}
-				}
-			}
-		}
-	}
-
-	[
-		{
-			"field" : "participants",
-			"items" : [
-				{
-					"index" : 2
-					"field" : "name",
-					"constraint" : "type",
-					"type" : "string"
-				}
-			]
-		}
-	]
-
-	Types:
-		-numeric
-		-string
-		-object
-		-boolean
-		-object
-		-list(for primitves)
-		-object_list(for objects)
-'''
