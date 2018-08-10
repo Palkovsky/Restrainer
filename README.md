@@ -96,7 +96,7 @@ Sometimes you may want to have nested lists or dictionaries in your data set and
 
 ### Nested dict
 
-If you wanna have nested dict and validate it you can use 'properties' attribute:
+If you want to have nested dict and validate it you can use 'properties' attribute:
 
     rules = {
         "name" : {
