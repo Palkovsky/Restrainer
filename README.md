@@ -274,15 +274,13 @@ Library lets you easily build your custom constrainers. You just need to create 
     validator.validate(data)
     print(validator.errors())
 
-Snippet above will print with:
+Snippet above will result with:
 
     {
         "field" : "name",
         "constraint" : "different",
         "different" : "admin"
     }
-
-This implementation of diffrentThan constrainer is preety poor, because it will only check if passed parrameters are the same. But you could rewrite it to accept list as constrainer_value and make sure if there are no same items.
 
 
 ## Running tests
