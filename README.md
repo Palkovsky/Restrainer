@@ -225,7 +225,7 @@ coerce | callable
 
 ### Validator constrainer
 
-Allows you to pass function which shall return True/False and accept one argument. This argument will be data passed by user. And if you return False validation will fail.
+Allows you to pass function returning True/False and accepting one argument. The argument is the field value. If you return False validation will fail with specifed error message.
 
 ### Coerce constrainer
 
@@ -234,8 +234,8 @@ Coerce function should take one argument and return some value. Let's say you ac
 
 ## Custom constrainers
 
-Library lets you easily build your custom constrainers. You just need to create class inheriting from Constraint. It has to have two methods:
-- name(self) - returning string value of how you wanna invoke constraint in rules set;
+Library lets you easily build your custom constrainers. You just need to create child class of Constraint. It has to have two methods:
+- name(self) - returning string value of how you want to invoke constraint in rules set;
 - validate(self, value, constraint_value, field, doc) - where you perform your logic and return True or False. **IMPORTANT:** Returning dict will result in validation fail. You should return dict when you want to pass additional info to error output. Like for "between" constraint you have additional "min", "max" fields in error output.
 - accept_null(self) - **optional**. It's False by default. If value in validated document is None, validation method won't be invoked. You would want to switch it to True in presence constraints or something like that.
 
