@@ -32,7 +32,7 @@ Putting it in front of this object:
 
     {
         "username" : "as",
-        "email" : "sexsexsex"
+        "email" : "wolololo"
     }
     
 will result with:
@@ -79,7 +79,7 @@ will result with:
     
     data = {
         "username" : "as",
-        "email" : "sexsexsex"
+        "email" : "wolololo"
     }
     
     validator = Validator()
